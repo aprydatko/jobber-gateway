@@ -1,16 +1,17 @@
-import { CustomError, IErrorResponse, winstonLogger } from "@aprydatko/jobber-shared";
-import { Application, json, Request, Response, NextFunction, urlencoded } from "express";
-import { Logger } from "winston";
-import cookieSession from "cookie-session";
-import helmet from "helmet";
+import { CustomError, IErrorResponse, winstonLogger } from '@aprydatko/jobber-shared';
+import { Application, json, Request, Response, NextFunction, urlencoded } from 'express';
+import { Logger } from 'winston';
+import cookieSession from 'cookie-session';
+import helmet from 'helmet';
 import cors from 'cors';
 import hpp from 'hpp';
-import compression from "compression";
-import { StatusCodes } from "http-status-codes";
+import compression from 'compression';
+import { StatusCodes } from 'http-status-codes';
 import http from 'http';
-import { config } from "@gateway/config";
-import { elasticSearch } from "@gateway/elasticsearch";
-import { appRoutes } from "@gateway/routes";
+import { config } from '@gateway/config';
+import { elasticSearch } from '@gateway/elasticsearch';
+import { appRoutes } from '@gateway/routes';
+import { axiosAuthInstance } from '@gateway/services/api/auth.service';
 
 const SERVER_PORT = 4000;
 const log: Logger = winstonLogger(`${config.ELASTIC_SEARCH_URL}`, 'apiGatewayServer', 'debug');
@@ -31,7 +32,7 @@ export class GatewayServer {
     this.startServer(this.app);
   }
 
-  private securityMiddleware(app: Application): void {
+   private securityMiddleware(app: Application): void {
     app.set('trust proxy', 1);
     app.use(
       cookieSession({
@@ -39,16 +40,25 @@ export class GatewayServer {
         keys: [`${config.SECRET_KEY_ONE}`, `${config.SECRET_KEY_TWO}`],
         maxAge: 24 * 7 * 3600000,
         secure: config.NODE_ENV !== 'development',
-        // sameSite: none
+        ...(config.NODE_ENV !== 'development' && {
+          sameSite: 'none'
+        })
       })
     );
-    app.use(hpp())
-    app.use(helmet())
+    app.use(hpp());
+    app.use(helmet());
     app.use(cors({
       origin: config.CLIENT_URL,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-    }))
+    }));
+
+    app.use((req: Request, _res: Response, next: NextFunction) => {
+      if (req.session?.jwt) {
+        axiosAuthInstance.defaults.headers['Authorization'] = `Bearer ${req.session?.jwt}`;
+      }
+      next();
+    });
   }
 
   private standartMiddleware(app: Application): void {
@@ -77,7 +87,7 @@ export class GatewayServer {
       if (error instanceof CustomError) {
         res.status(error.statusCode).json(error.serializeErrors());
       }
-      
+
       next();
     });
   }
@@ -96,7 +106,6 @@ export class GatewayServer {
       log.info(`Gateway server has started with process id ${process.pid}`);
       httpServer.listen(SERVER_PORT, () => {
         log.info(`Gateway server running on port ${SERVER_PORT}`);
-
       });
     } catch (error) {
       log.log('error', `GatewayServicestartServer() error method:`, error);

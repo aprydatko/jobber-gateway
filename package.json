@@ -19,7 +19,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@aprydatko/jobber-shared": "^0.0.3",
+    "@aprydatko/jobber-shared": "^0.0.6",
     "@elastic/elasticsearch": "^9.0.2",
     "axios": "^1.9.0",
     "bcrypt": "^6.0.0",
