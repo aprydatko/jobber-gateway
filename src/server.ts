@@ -1,3 +1,5 @@
+import http from 'http';
+
 import { CustomError, IErrorResponse, winstonLogger } from '@aprydatko/jobber-shared';
 import { Application, json, Request, Response, NextFunction, urlencoded } from 'express';
 import { Logger } from 'winston';
@@ -7,7 +9,6 @@ import cors from 'cors';
 import hpp from 'hpp';
 import compression from 'compression';
 import { StatusCodes } from 'http-status-codes';
-import http from 'http';
 import { config } from '@gateway/config';
 import { elasticSearch } from '@gateway/elasticsearch';
 import { appRoutes } from '@gateway/routes';
@@ -18,6 +19,8 @@ import { Server } from 'socket.io';
 import { createClient } from 'redis';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { SocketIOAppHandler } from '@gateway/sockets/socket';
+import { axiosMessageInstance } from '@gateway/services/api/message.service';
+import { axiosGigInstance } from '@gateway/services/api/gig.service';
 
 const SERVER_PORT = 4000;
 const log: Logger = winstonLogger(`${config.ELASTIC_SEARCH_URL}`, 'apiGatewayServer', 'debug');
@@ -67,6 +70,8 @@ export class GatewayServer {
         axiosAuthInstance.defaults.headers['Authorization'] = `Bearer ${req.session?.jwt}`;
         axiosBuyerInstance.defaults.headers['Authorization'] = `Bearer ${req.session?.jwt}`;
         axiosSellerInstance.defaults.headers['Authorization'] = `Bearer ${req.session?.jwt}`;
+        axiosGigInstance.defaults.headers['Authorization'] = `Bearer ${req.session?.jwt}`;
+        axiosMessageInstance.defaults.headers['Authorization'] = `Bearer ${req.session?.jwt}`;
       }
       next();
     });
@@ -110,7 +115,7 @@ export class GatewayServer {
       this.startHttpServer(httpServer);
       this.socketIOConnections(socketIO);
     } catch (error) {
-      log.log('error', `GatewayServicestartServer() error method:`, error);
+      log.log('error', 'GatewayService startServer() error method:', error);
     }
   }
 
@@ -136,7 +141,7 @@ export class GatewayServer {
         log.info(`Gateway server running on port ${SERVER_PORT}`);
       });
     } catch (error) {
-      log.log('error', `GatewayServicestartServer() error method:`, error);
+      log.log('error', 'GatewayService startServer() error method:', error);
     }
   }
 

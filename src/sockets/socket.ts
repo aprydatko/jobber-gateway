@@ -1,13 +1,13 @@
 import { config } from '@gateway/config';
 import { GatewayCache } from '@gateway/redis/gateway.cache';
-import { IMessageDocument, IOrderDocument, IOrderNotifcation, winstonLogger } from '@aprydatko/jobber-shared';
+import { IMessageDocument, winstonLogger } from '@aprydatko/jobber-shared';
 import { Server, Socket } from 'socket.io';
 import { io, Socket as SocketClient } from 'socket.io-client';
 import { Logger } from 'winston';
 
 const log: Logger = winstonLogger(`${config.ELASTIC_SEARCH_URL}`, 'gatewaySocket', 'debug');
 let chatSocketClient: SocketClient;
-let orderSocketClient: SocketClient;
+// let orderSocketClient: SocketClient;
 
 export class SocketIOAppHandler {
   private io: Server;
@@ -17,12 +17,12 @@ export class SocketIOAppHandler {
     this.io = io;
     this.gatewayCache = new GatewayCache();
     this.chatSocketServiceIOConnections();
-    this.orderSocketServiceIOConnections();
+    // this.orderSocketServiceIOConnections();
   }
 
   public listen(): void {
     this.chatSocketServiceIOConnections();
-    this.orderSocketServiceIOConnections();
+    // this.orderSocketServiceIOConnections();
     this.io.on('connection', async (socket: Socket) => {
       socket.on('getLoggedInUsers', async () => {
         const response: string[] = await this.gatewayCache.getLoggedInUsersFromCache('loggedInUsers');
@@ -75,29 +75,29 @@ export class SocketIOAppHandler {
     });
   }
 
-  private orderSocketServiceIOConnections(): void {
-    orderSocketClient = io(`${config.ORDER_BASE_URL}`, {
-      transports: ['websocket', 'polling'],
-      secure: true
-    });
+  // private orderSocketServiceIOConnections(): void {
+  //   orderSocketClient = io(`${config.ORDER_BASE_URL}`, {
+  //     transports: ['websocket', 'polling'],
+  //     secure: true
+  //   });
 
-    orderSocketClient.on('connect', () => {
-      log.info('OrderService socket connected');
-    });
+  //   orderSocketClient.on('connect', () => {
+  //     log.info('OrderService socket connected');
+  //   });
 
-    orderSocketClient.on('disconnect', (reason: SocketClient.DisconnectReason) => {
-      log.log('error', 'OrderSocket disconnect reason:', reason);
-      orderSocketClient.connect();
-    });
+  //   orderSocketClient.on('disconnect', (reason: SocketClient.DisconnectReason) => {
+  //     log.log('error', 'OrderSocket disconnect reason:', reason);
+  //     orderSocketClient.connect();
+  //   });
 
-    orderSocketClient.on('connect_error', (error: Error) => {
-      log.log('error', 'OrderService socket connection error:', error);
-      orderSocketClient.connect();
-    });
+  //   orderSocketClient.on('connect_error', (error: Error) => {
+  //     log.log('error', 'OrderService socket connection error:', error);
+  //     orderSocketClient.connect();
+  //   });
 
-    // custom event
-    orderSocketClient.on('order notification', (order: IOrderDocument, notification: IOrderNotifcation) => {
-      this.io.emit('order notification', order, notification);
-    });
-  }
+  //   // custom event
+  //   orderSocketClient.on('order notification', (order: IOrderDocument, notification: IOrderNotifcation) => {
+  //     this.io.emit('order notification', order, notification);
+  //   });
+  // }
 };
