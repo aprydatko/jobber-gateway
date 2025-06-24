@@ -22,6 +22,7 @@ import { SocketIOAppHandler } from '@gateway/sockets/socket';
 import { axiosMessageInstance } from '@gateway/services/api/message.service';
 import { axiosGigInstance } from '@gateway/services/api/gig.service';
 import { axiosOrderInstance } from '@gateway/services/api/order.service';
+import { axiosReviewInstance } from '@gateway/services/api/review.service';
 
 const SERVER_PORT = 4000;
 const log: Logger = winstonLogger(`${config.ELASTIC_SEARCH_URL}`, 'apiGatewayServer', 'debug');
@@ -74,6 +75,7 @@ export class GatewayServer {
         axiosGigInstance.defaults.headers['Authorization'] = `Bearer ${req.session?.jwt}`;
         axiosMessageInstance.defaults.headers['Authorization'] = `Bearer ${req.session?.jwt}`;
         axiosOrderInstance.defaults.headers['Authorization'] = `Bearer ${req.session?.jwt}`;
+        axiosReviewInstance.defaults.headers['Authorization'] = `Bearer ${req.session?.jwt}`;
       }
       next();
     });
